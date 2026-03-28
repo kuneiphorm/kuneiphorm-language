@@ -1,0 +1,15 @@
+@version 1;
+
+parser ExprParser;
+
+rules {
+    [add] Expr => Expr 'PLUS' Term;
+    [sub] Expr => Expr 'MINUS' Term;
+    [term] Expr => Term;
+    [mul] Term => Term 'STAR' Factor;
+    [div] Term => Term 'SLASH' Factor;
+    [factor] Term => Factor;
+    [group] Factor => 'LP' Expr 'RP';
+    [num] Factor => 'NUM';
+    [id] Factor => 'ID';
+}

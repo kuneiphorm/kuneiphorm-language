@@ -28,10 +28,13 @@ import org.kuneiphorm.runtime.exception.UnexpectedEndOfInputException;
  * <p>Supports three kinds of definitions:
  *
  * <ul>
- *   <li>{@code language <name>; tokens { ... } rules { ... }} -- full language
- *   <li>{@code lexer <name>; tokens { ... }} -- standalone lexer
- *   <li>{@code parser <name>; rules { ... }} -- standalone parser
+ *   <li>{@code @version 1; language <name>; tokens { ... } rules { ... }} -- full language
+ *   <li>{@code @version 1; lexer <name>; tokens { ... }} -- standalone lexer
+ *   <li>{@code @version 1; parser <name>; rules { ... }} -- standalone parser
  * </ul>
+ *
+ * <p>The {@code @version N;} header is required and checked against {@link
+ * LanguageConstants#MIN_VERSION} and {@link LanguageConstants#CURRENT_VERSION}.
  *
  * <p>The parser accepts a {@link Function}{@code <String, L>} label mapper to convert string
  * terminal literals to typed labels, enabling generic label types.
@@ -39,7 +42,7 @@ import org.kuneiphorm.runtime.exception.UnexpectedEndOfInputException;
  * <p>Usage:
  *
  * <pre>{@code
- * ParseResult<String> result = LanguageParser.parse("language Foo; tokens { ... } rules { ... }");
+ * ParseResult<String> result = LanguageParser.parse("@version 1; language Foo; ...");
  * ParseResult<MyEnum> result = LanguageParser.parse(charFlow, MyEnum::valueOf);
  * }</pre>
  *
@@ -96,6 +99,26 @@ public final class LanguageParser {
     Objects.requireNonNull(flow, "flow");
     Objects.requireNonNull(labelMapper, "labelMapper");
 
+    // Version header: @version N;
+    CharFlowUtils.skipTrivia(flow);
+    flow.expect('@');
+    expectKeyword(flow, "version");
+    CharFlowUtils.skipTrivia(flow);
+    int version = readInt(flow);
+    if (version < LanguageConstants.MIN_VERSION || version > LanguageConstants.CURRENT_VERSION) {
+      throw new IllegalArgumentException(
+          "Unsupported format version "
+              + version
+              + " (supported: "
+              + LanguageConstants.MIN_VERSION
+              + " to "
+              + LanguageConstants.CURRENT_VERSION
+              + ")");
+    }
+    CharFlowUtils.skipTrivia(flow);
+    flow.expect(';');
+
+    // Definition keyword
     CharFlowUtils.skipTrivia(flow);
     String keyword = readIdentifier(flow);
 
@@ -106,9 +129,9 @@ public final class LanguageParser {
     flow.expect(';');
 
     return switch (keyword) {
-      case "language" -> parseLanguage(flow, name, labelMapper);
-      case "lexer" -> parseLexer(flow, name, labelMapper);
-      case "parser" -> parseParser(flow, name, labelMapper);
+      case "language" -> parseLanguage(flow, version, name, labelMapper);
+      case "lexer" -> parseLexer(flow, version, name, labelMapper);
+      case "parser" -> parseParser(flow, version, name, labelMapper);
       default ->
           throw new UnexpectedCharException(
               flow.getName(), flow.getLine(), flow.getColumn(), 'l', keyword.charAt(0));
@@ -120,7 +143,7 @@ public final class LanguageParser {
   // ---------------------------------------------------------------------------
 
   private static <L> ParseResult<L> parseLanguage(
-      CharFlow flow, String name, Function<String, L> labelMapper)
+      CharFlow flow, int version, String name, Function<String, L> labelMapper)
       throws IOException, SyntaxException {
     CharFlowUtils.skipTrivia(flow);
     expectKeyword(flow, "tokens");
@@ -133,27 +156,27 @@ public final class LanguageParser {
     Variable<L> start = rules.get(0).source();
     Grammar<L> grammar = new Grammar<>(start, rules);
     Language<L> language = new Language<>(name, grammar, tokens);
-    return new ParseResult.LanguageResult<>(language);
+    return new ParseResult.LanguageResult<>(version, language);
   }
 
   private static <L> ParseResult<L> parseLexer(
-      CharFlow flow, String name, Function<String, L> labelMapper)
+      CharFlow flow, int version, String name, Function<String, L> labelMapper)
       throws IOException, SyntaxException {
     CharFlowUtils.skipTrivia(flow);
     expectKeyword(flow, "tokens");
     List<TokenDefinition<L>> tokens = parseTokensBlock(flow, labelMapper);
-    return new ParseResult.LexerResult<>(name, tokens);
+    return new ParseResult.LexerResult<>(version, name, tokens);
   }
 
   private static <L> ParseResult<L> parseParser(
-      CharFlow flow, String name, Function<String, L> labelMapper)
+      CharFlow flow, int version, String name, Function<String, L> labelMapper)
       throws IOException, SyntaxException {
     CharFlowUtils.skipTrivia(flow);
     expectKeyword(flow, "rules");
     List<Rule<L>> rules = parseRulesBlock(flow, labelMapper);
     Variable<L> start = rules.get(0).source();
     Grammar<L> grammar = new Grammar<>(start, rules);
-    return new ParseResult.ParserResult<>(name, grammar);
+    return new ParseResult.ParserResult<>(version, name, grammar);
   }
 
   // ---------------------------------------------------------------------------
@@ -417,6 +440,22 @@ public final class LanguageParser {
       throw new UnexpectedCharException(
           flow.getName(), flow.getLine(), flow.getColumn(), keyword.charAt(0), actual.charAt(0));
     }
+  }
+
+  private static int readInt(CharFlow flow) throws IOException, SyntaxException {
+    if (!flow.hasMore() || flow.peek() < '0' || flow.peek() > '9') {
+      throw new UnexpectedCharException(
+          flow.getName(),
+          flow.getLine(),
+          flow.getColumn(),
+          '0',
+          flow.hasMore() ? (char) flow.peek() : '?');
+    }
+    int result = 0;
+    while (flow.hasMore() && flow.peek() >= '0' && flow.peek() <= '9') {
+      result = result * 10 + (flow.next() - '0');
+    }
+    return result;
   }
 
   private static boolean isIdentStart(int ch) {

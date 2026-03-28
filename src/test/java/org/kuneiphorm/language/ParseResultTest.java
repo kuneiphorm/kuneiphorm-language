@@ -22,13 +22,14 @@ class ParseResultTest {
               List.of(new Rule<>(null, new Variable<>("S"), Expression.unit(new Terminal<>("a"))))),
           List.of(new TokenDefinition<>("a", "a", Set.of())));
 
-  private static final ParseResult<String> LANGUAGE_RESULT = new ParseResult.LanguageResult<>(LANG);
+  private static final ParseResult<String> LANGUAGE_RESULT =
+      new ParseResult.LanguageResult<>(1, LANG);
 
   private static final ParseResult<String> LEXER_RESULT =
-      new ParseResult.LexerResult<>("Lex", List.of(new TokenDefinition<>("a", "a", Set.of())));
+      new ParseResult.LexerResult<>(1, "Lex", List.of(new TokenDefinition<>("a", "a", Set.of())));
 
   private static final ParseResult<String> PARSER_RESULT =
-      new ParseResult.ParserResult<>("Par", LANG.grammar());
+      new ParseResult.ParserResult<>(1, "Par", LANG.grammar());
 
   // --- isXxxResult ---
 

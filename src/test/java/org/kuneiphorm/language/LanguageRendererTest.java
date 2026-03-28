@@ -58,7 +58,7 @@ class LanguageRendererTest {
             new Grammar<>(var("S"), List.of(rule("S", term("a")))),
             List.of(token("a", "a")));
     String result = LanguageRenderer.render(lang);
-    assertTrue(result.startsWith("language MyLang;\n"));
+    assertTrue(result.contains("language MyLang;\n"));
   }
 
   @Test
@@ -80,7 +80,7 @@ class LanguageRendererTest {
   @Test
   void render_lexerResult_containsTokensBlock() {
     ParseResult.LexerResult<String> lr =
-        new ParseResult.LexerResult<>("Lex", List.of(token("a", "a")));
+        new ParseResult.LexerResult<>(1, "Lex", List.of(token("a", "a")));
     String rendered = LanguageRenderer.renderResult(lr);
     assertTrue(rendered.contains("tokens {\n"));
     assertTrue(rendered.contains("}\n"));
@@ -89,7 +89,7 @@ class LanguageRendererTest {
   @Test
   void render_parserResult_endsWithClosingBrace() {
     Grammar<String> g = new Grammar<>(var("S"), List.of(rule("S", term("a"))));
-    ParseResult.ParserResult<String> pr = new ParseResult.ParserResult<>("Par", g);
+    ParseResult.ParserResult<String> pr = new ParseResult.ParserResult<>(1, "Par", g);
     String rendered = LanguageRenderer.renderResult(pr);
     assertTrue(rendered.contains("rules {\n"));
     assertTrue(rendered.endsWith("}"));
@@ -287,9 +287,9 @@ class LanguageRendererTest {
   void render_lexerResult_containsLexerKeyword() {
     ParseResult.LexerResult<String> result =
         new ParseResult.LexerResult<>(
-            "MyLexer", List.of(token("ID", "[a-z]+"), skipToken("WS", "[ ]+")));
+            1, "MyLexer", List.of(token("ID", "[a-z]+"), skipToken("WS", "[ ]+")));
     String rendered = LanguageRenderer.renderResult(result);
-    assertTrue(rendered.startsWith("lexer MyLexer;\n"));
+    assertTrue(rendered.contains("lexer MyLexer;\n"));
     assertTrue(rendered.contains("'ID' <- \"[a-z]+\";"));
     assertTrue(rendered.contains("@skip 'WS'"));
     assertFalse(rendered.contains("rules"));
@@ -301,9 +301,9 @@ class LanguageRendererTest {
         new Grammar<>(
             var("S"),
             List.of(rule("S", Expression.sequence(term("a"), ref("T"))), rule("T", term("b"))));
-    ParseResult.ParserResult<String> result = new ParseResult.ParserResult<>("MyParser", g);
+    ParseResult.ParserResult<String> result = new ParseResult.ParserResult<>(1, "MyParser", g);
     String rendered = LanguageRenderer.renderResult(result);
-    assertTrue(rendered.startsWith("parser MyParser;\n"));
+    assertTrue(rendered.contains("parser MyParser;\n"));
     assertTrue(rendered.contains("S => 'a' T;"));
     assertFalse(rendered.contains("tokens"));
   }
@@ -315,9 +315,10 @@ class LanguageRendererTest {
             "Test",
             new Grammar<>(var("S"), List.of(rule("S", term("a")))),
             List.of(token("a", "a")));
-    ParseResult.LanguageResult<String> result = new ParseResult.LanguageResult<>(lang);
+    ParseResult.LanguageResult<String> result = new ParseResult.LanguageResult<>(1, lang);
     String rendered = LanguageRenderer.renderResult(result);
-    assertTrue(rendered.startsWith("language Test;\n"));
+    assertTrue(rendered.contains("@version 1;"));
+    assertTrue(rendered.contains("language Test;"));
     assertTrue(rendered.contains("tokens"));
     assertTrue(rendered.contains("rules"));
   }

@@ -25,6 +25,7 @@ class LanguageParserTest {
   void parse_fullLanguage_returnsLanguageResult() throws SyntaxException {
     String input =
         """
+        @version 1;
         language Foo;
 
         tokens {
@@ -50,6 +51,7 @@ class LanguageParserTest {
   void parse_fullLanguage_tokensCorrect() throws SyntaxException {
     String input =
         """
+        @version 1;
         language Test;
         tokens {
             @skip 'WS' <- "[ ]+";
@@ -76,6 +78,7 @@ class LanguageParserTest {
   void parse_fullLanguage_rulesCorrect() throws SyntaxException {
     String input =
         """
+        @version 1;
         language Test;
         tokens {
             'a' <- "a";
@@ -103,6 +106,7 @@ class LanguageParserTest {
   void parse_fullLanguage_startSymbolIsFirstRule() throws SyntaxException {
     String input =
         """
+        @version 1;
         language Test;
         tokens { 'a' <- "a"; }
         rules {
@@ -121,6 +125,7 @@ class LanguageParserTest {
   void parse_lexer_returnsLexerResult() throws SyntaxException {
     String input =
         """
+        @version 1;
         lexer MyLexer;
         tokens {
             @skip 'WS' <- "[ ]+";
@@ -143,6 +148,7 @@ class LanguageParserTest {
   void parse_parser_returnsParserResult() throws SyntaxException {
     String input =
         """
+        @version 1;
         parser MyParser;
         rules {
             S => A B;
@@ -169,49 +175,56 @@ class LanguageParserTest {
 
   @Test
   void parse_terminalExpression_returnsUnit() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a'; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a'; }"));
     assertInstanceOf(ExpressionUnit.class, rule.pattern());
     assertInstanceOf(Terminal.class, ((ExpressionUnit<?>) rule.pattern()).label());
   }
 
   @Test
   void parse_variableExpression_returnsUnit() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => A; A => S; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => A; A => S; }"));
     assertInstanceOf(ExpressionUnit.class, rule.pattern());
     assertInstanceOf(Variable.class, ((ExpressionUnit<?>) rule.pattern()).label());
   }
 
   @Test
   void parse_sequenceExpression_returnsSequence() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a' 'b' 'c'; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' 'b' 'c'; }"));
     assertInstanceOf(ExpressionSequence.class, rule.pattern());
     assertEquals(3, rule.pattern().getChildren().size());
   }
 
   @Test
   void parse_choiceExpression_returnsChoice() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a' | 'b'; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' | 'b'; }"));
     assertInstanceOf(ExpressionChoice.class, rule.pattern());
     assertEquals(2, rule.pattern().getChildren().size());
   }
 
   @Test
   void parse_starQuantifier_returnsStar() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a' *; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' *; }"));
     assertInstanceOf(ExpressionQuantifier.class, rule.pattern());
     assertEquals(ExpressionQuantifier.Kind.STAR, ((ExpressionQuantifier<?>) rule.pattern()).kind());
   }
 
   @Test
   void parse_plusQuantifier_returnsPlus() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a'+; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a'+; }"));
     assertInstanceOf(ExpressionQuantifier.class, rule.pattern());
     assertEquals(ExpressionQuantifier.Kind.PLUS, ((ExpressionQuantifier<?>) rule.pattern()).kind());
   }
 
   @Test
   void parse_optionalQuantifier_returnsOptional() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a'?; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a'?; }"));
     assertInstanceOf(ExpressionQuantifier.class, rule.pattern());
     assertEquals(
         ExpressionQuantifier.Kind.OPTIONAL, ((ExpressionQuantifier<?>) rule.pattern()).kind());
@@ -219,7 +232,8 @@ class LanguageParserTest {
 
   @Test
   void parse_groupedExpression_parsesCorrectly() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => ('a' | 'b')*; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => ('a' | 'b')*; }"));
     assertInstanceOf(ExpressionQuantifier.class, rule.pattern());
     ExpressionQuantifier<?> q = (ExpressionQuantifier<?>) rule.pattern();
     assertEquals(ExpressionQuantifier.Kind.STAR, q.kind());
@@ -228,7 +242,8 @@ class LanguageParserTest {
 
   @Test
   void parse_nestedSequenceInChoice_parsesCorrectly() throws SyntaxException {
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a' 'b' | 'c'; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' 'b' | 'c'; }"));
     assertInstanceOf(ExpressionChoice.class, rule.pattern());
     ExpressionChoice<?> choice = (ExpressionChoice<?>) rule.pattern();
     assertInstanceOf(ExpressionSequence.class, choice.alternatives().get(0));
@@ -243,6 +258,7 @@ class LanguageParserTest {
   void parse_customLabelMapper_appliesMapping() throws SyntaxException {
     String input =
         """
+        @version 1;
         lexer Test;
         tokens {
             'ID' <- "[a-z]+";
@@ -262,6 +278,7 @@ class LanguageParserTest {
     String input =
         """
         // This is a comment
+        @version 1;
         language Test;
         /* block comment */
         tokens {
@@ -277,14 +294,16 @@ class LanguageParserTest {
   @Test
   void parse_commentBeforeArrow_parsesCorrectly() throws SyntaxException {
     // skipTrivia before => in parseRule
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S /* c */ => 'a'; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S /* c */ => 'a'; }"));
     assertEquals("S", rule.source().name());
   }
 
   @Test
   void parse_commentBeforeExpression_parsesCorrectly() throws SyntaxException {
     // skipTrivia before expression in parseRule
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => /* c */ 'a'; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => /* c */ 'a'; }"));
     assertInstanceOf(ExpressionUnit.class, rule.pattern());
   }
 
@@ -292,7 +311,7 @@ class LanguageParserTest {
   void parse_commentBeforePipe_parsesCorrectly() throws SyntaxException {
     // skipTrivia before | in parseExpression
     Rule<String> rule =
-        firstRule(LanguageParser.parse("parser T; rules { S => 'a' /* c */ | 'b'; }"));
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' /* c */ | 'b'; }"));
     assertInstanceOf(ExpressionChoice.class, rule.pattern());
   }
 
@@ -300,7 +319,7 @@ class LanguageParserTest {
   void parse_commentAfterPipe_parsesCorrectly() throws SyntaxException {
     // skipTrivia after | in parseExpression
     Rule<String> rule =
-        firstRule(LanguageParser.parse("parser T; rules { S => 'a' | /* c */ 'b'; }"));
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' | /* c */ 'b'; }"));
     assertInstanceOf(ExpressionChoice.class, rule.pattern());
   }
 
@@ -308,14 +327,16 @@ class LanguageParserTest {
   void parse_commentInsideGroup_parsesCorrectly() throws SyntaxException {
     // skipTrivia inside ( ) in parseBase
     Rule<String> rule =
-        firstRule(LanguageParser.parse("parser T; rules { S => ( /* c */ 'a' /* c */ )*; }"));
+        firstRule(
+            LanguageParser.parse("@version 1; parser T; rules { S => ( /* c */ 'a' /* c */ )*; }"));
     assertInstanceOf(ExpressionQuantifier.class, rule.pattern());
   }
 
   @Test
   void parse_commentBeforeSemicolon_parsesCorrectly() throws SyntaxException {
     // skipTrivia before ; in parseRule
-    Rule<String> rule = firstRule(LanguageParser.parse("parser T; rules { S => 'a' /* c */ ; }"));
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' /* c */ ; }"));
     assertInstanceOf(ExpressionUnit.class, rule.pattern());
   }
 
@@ -325,18 +346,21 @@ class LanguageParserTest {
 
   @Test
   void parse_unknownKeyword_throws() {
-    assertThrows(SyntaxException.class, () -> LanguageParser.parse("foobar Test; tokens {}"));
+    assertThrows(
+        SyntaxException.class, () -> LanguageParser.parse("@version 1; foobar Test; tokens {}"));
   }
 
   @Test
   void parse_missingSemicolon_throws() {
-    assertThrows(SyntaxException.class, () -> LanguageParser.parse("language Test tokens {}"));
+    assertThrows(
+        SyntaxException.class, () -> LanguageParser.parse("@version 1; language Test tokens {}"));
   }
 
   @Test
-  void parse_unclosedString_throws() {
+  void parse_unclosedTokensBlock_throws() {
     assertThrows(
-        SyntaxException.class, () -> LanguageParser.parse("lexer T; tokens { 'ID' <- \"abc; }"));
+        SyntaxException.class,
+        () -> LanguageParser.parse("@version 1; lexer T; tokens { 'ID' <- \"abc"));
   }
 
   @Test
@@ -350,9 +374,66 @@ class LanguageParserTest {
   }
 
   @Test
-  void parse_nonIdentifierAtStart_throws() {
-    // readIdentifier negated conditional — digit is not an ident start
-    assertThrows(SyntaxException.class, () -> LanguageParser.parse("123 Test;"));
+  void parse_missingVersionHeader_throws() {
+    assertThrows(SyntaxException.class, () -> LanguageParser.parse("language Test; tokens {}"));
+  }
+
+  @Test
+  void parse_unknownTokenTag_throws() {
+    assertThrows(
+        SyntaxException.class,
+        () -> LanguageParser.parse("@version 1; lexer T; tokens { @foobar 'X' <- \"x\"; }"));
+  }
+
+  @Test
+  void parse_wrongKeywordForTokensBlock_throws() {
+    assertThrows(
+        SyntaxException.class,
+        () -> LanguageParser.parse("@version 1; lexer T; foobar { 'X' <- \"x\"; }"));
+  }
+
+  @Test
+  void parse_wrongKeywordForRulesBlock_throws() {
+    assertThrows(
+        SyntaxException.class,
+        () ->
+            LanguageParser.parse(
+                "@version 1; language T; tokens { 'a' <- \"a\"; } foobar { S => 'a'; }"));
+  }
+
+  @Test
+  void parse_eofInIdentifier_throws() {
+    assertThrows(SyntaxException.class, () -> LanguageParser.parse("@version 1;"));
+  }
+
+  @Test
+  void parse_versionNonDigit_throws() {
+    assertThrows(SyntaxException.class, () -> LanguageParser.parse("@version x;"));
+  }
+
+  @Test
+  void parse_unclosedLabel_throws() {
+    assertThrows(
+        SyntaxException.class,
+        () -> LanguageParser.parse("@version 1; lexer T; tokens { 'X <- \"x\"; }"));
+  }
+
+  @Test
+  void parse_eofAfterRuleArrow_throws() {
+    assertThrows(
+        SyntaxException.class, () -> LanguageParser.parse("@version 1; parser T; rules { S =>"));
+  }
+
+  @Test
+  void parse_unsupportedVersion_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> LanguageParser.parse("@version 99; language Test;"));
+  }
+
+  @Test
+  void parse_versionZero_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> LanguageParser.parse("@version 0; language Test;"));
   }
 
   // -------------------------------------------------------------------------
@@ -364,6 +445,7 @@ class LanguageParserTest {
     String input =
         """
 
+            @version 1;
             language   Test  ;
 
             tokens  {
@@ -382,7 +464,7 @@ class LanguageParserTest {
   @Test
   void parse_whitespaceInsideGroup_parsesCorrectly() throws SyntaxException {
     Rule<String> rule =
-        firstRule(LanguageParser.parse("parser T; rules { S => ( 'a' | 'b' ) *; }"));
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => ( 'a' | 'b' ) *; }"));
     assertInstanceOf(ExpressionQuantifier.class, rule.pattern());
   }
 
@@ -392,14 +474,14 @@ class LanguageParserTest {
 
   @Test
   void parse_identifierBoundaryChars_allAccepted() throws SyntaxException {
-    String input = "parser T; rules { aZ_09 => Az; Az => aZ_09; }";
+    String input = "@version 1; parser T; rules { aZ_09 => Az; Az => aZ_09; }";
     ParseResult<String> result = LanguageParser.parse(input);
     assertEquals(2, result.getAsParserResult().grammar().rules().size());
   }
 
   @Test
   void parse_underscoreIdentifier_accepted() throws SyntaxException {
-    String input = "parser T; rules { _start => _end; _end => _start; }";
+    String input = "@version 1; parser T; rules { _start => _end; _end => _start; }";
     assertTrue(LanguageParser.parse(input).isParserResult());
   }
 
@@ -411,6 +493,7 @@ class LanguageParserTest {
   void roundTrip_exprLanguage_preservesStructure() throws SyntaxException {
     String input =
         """
+        @version 1;
         language ExprLang;
         tokens {
             @skip 'WS' <- "[ \\t]+";
@@ -450,6 +533,7 @@ class LanguageParserTest {
   void roundTrip_jsonLike_preservesTokenCount() throws SyntaxException {
     String input =
         """
+        @version 1;
         language JsonLike;
         tokens {
             @skip 'WS' <- "[ \\t\\r\\n]+";
@@ -460,6 +544,7 @@ class LanguageParserTest {
             'COLON' <- ":";
             'COMMA' <- ",";
             'STRING' <- "\\"[^\\"]*\\"";
+
             'NUMBER' <- "[0-9]+";
             'TRUE' <- "true";
             'FALSE' <- "false";
@@ -497,6 +582,7 @@ class LanguageParserTest {
   void roundTrip_lexer_preservesStructure() throws SyntaxException {
     String input =
         """
+        @version 1;
         lexer MyLexer;
         tokens {
             @skip 'WS' <- "[ ]+";
@@ -513,7 +599,7 @@ class LanguageParserTest {
 
   @Test
   void roundTrip_parser_preservesStructure() throws SyntaxException {
-    String input = "parser MyParser; rules { S => 'a' 'b'; }";
+    String input = "@version 1; parser MyParser; rules { S => 'a' 'b'; }";
     ParseResult.ParserResult<String> pr1 = LanguageParser.parse(input).getAsParserResult();
     String rendered = LanguageRenderer.renderResult(LanguageParser.parse(input));
     ParseResult.ParserResult<String> pr2 = LanguageParser.parse(rendered).getAsParserResult();

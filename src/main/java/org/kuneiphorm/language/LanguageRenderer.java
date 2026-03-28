@@ -111,6 +111,7 @@ public final class LanguageRenderer {
     Objects.requireNonNull(labelRenderer, "labelRenderer");
     Objects.requireNonNull(writer, "writer");
 
+    renderVersionHeader(LanguageConstants.CURRENT_VERSION, writer);
     writer.write("language ");
     writer.write(language.name());
     writer.write(";\n");
@@ -135,14 +136,23 @@ public final class LanguageRenderer {
     Objects.requireNonNull(writer, "writer");
 
     switch (result) {
-      case ParseResult.LanguageResult<L> lr -> render(lr.language(), labelRenderer, writer);
+      case ParseResult.LanguageResult<L> lr -> {
+        renderVersionHeader(lr.version(), writer);
+        writer.write("language ");
+        writer.write(lr.language().name());
+        writer.write(";\n");
+        renderTokensBlock(lr.language().tokens(), labelRenderer, writer);
+        renderRulesBlock(lr.language().grammar().rules(), labelRenderer, writer);
+      }
       case ParseResult.LexerResult<L> lr -> {
+        renderVersionHeader(lr.version(), writer);
         writer.write("lexer ");
         writer.write(lr.name());
         writer.write(";\n");
         renderTokensBlock(lr.tokens(), labelRenderer, writer);
       }
       case ParseResult.ParserResult<L> pr -> {
+        renderVersionHeader(pr.version(), writer);
         writer.write("parser ");
         writer.write(pr.name());
         writer.write(";\n");
@@ -154,6 +164,12 @@ public final class LanguageRenderer {
   // -------------------------------------------------------------------------
   // Block rendering
   // -------------------------------------------------------------------------
+
+  private static void renderVersionHeader(int version, Writer writer) throws IOException {
+    writer.write("@version ");
+    writer.write(Integer.toString(version));
+    writer.write(";\n\n");
+  }
 
   private static <L> void renderTokensBlock(
       List<TokenDefinition<L>> tokens, Function<L, String> labelRenderer, Writer writer)

@@ -35,6 +35,8 @@ org.kuneiphorm.language
 The `.kph` format supports three kinds of definitions:
 
 ```
+@version 1;
+
 language ExprLang;
 
 tokens {
@@ -58,7 +60,7 @@ rules {
 }
 ```
 
-Standalone lexer (`lexer <name>; tokens { ... }`) and parser (`parser <name>; rules { ... }`) definitions are also supported.
+All definitions start with `@version 1;`. Standalone lexer (`lexer <name>; tokens { ... }`) and parser (`parser <name>; rules { ... }`) definitions are also supported.
 
 ## Usage
 

@@ -1,0 +1,25 @@
+@version 1;
+
+language JsonLike;
+
+tokens {
+    @skip 'WS'      <- "[ \t\r\n]+";
+    'LBRACE'         <- "\{";
+    'RBRACE'         <- "\}";
+    'LBRACKET'       <- "\[";
+    'RBRACKET'       <- "\]";
+    'COLON'          <- ":";
+    'COMMA'          <- ",";
+    'STRING'         <- "\"[^\"]*\"";
+    'NUMBER'         <- "-?[0-9]+";
+    'TRUE'           <- "true";
+    'FALSE'          <- "false";
+    'NULL'           <- "null";
+}
+
+rules {
+    Value => Object | Array | 'STRING' | 'NUMBER' | 'TRUE' | 'FALSE' | 'NULL';
+    Object => 'LBRACE' (Pair ('COMMA' Pair)*)? 'RBRACE';
+    Pair => 'STRING' 'COLON' Value;
+    Array => 'LBRACKET' (Value ('COMMA' Value)*)? 'RBRACKET';
+}

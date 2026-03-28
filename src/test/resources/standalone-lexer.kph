@@ -1,0 +1,16 @@
+@version 1;
+
+lexer TokenLexer;
+
+tokens {
+    @skip 'WS'  <- "[ \t\r\n]+";
+    'ID'        <- "[a-zA-Z_][a-zA-Z0-9_]*";
+    'NUM'       <- "[0-9]+";
+    'PLUS'      <- "\+";
+    'MINUS'     <- "-";
+    'STAR'      <- "\*";
+    'SLASH'     <- "/";
+    'LP'        <- "\(";
+    'RP'        <- "\)";
+    'SEMI'      <- ";";
+}

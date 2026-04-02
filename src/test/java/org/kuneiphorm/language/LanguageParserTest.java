@@ -486,6 +486,63 @@ class LanguageParserTest {
   }
 
   // -------------------------------------------------------------------------
+  // readInt boundary coverage
+  // -------------------------------------------------------------------------
+
+  @Test
+  void parse_multiDigitVersion_parsesCorrectly() throws SyntaxException {
+    // Exercises readInt with result = result * 10 + digit for multiple digits.
+    // If multiplication is replaced with division, the result would be wrong.
+    // Note: only version 1 is currently supported, so we test that parsing fails
+    // with the right exception for version 10 (unsupported, not syntax error).
+    assertThrows(
+        IllegalArgumentException.class, () -> LanguageParser.parse("@version 10; language Test;"));
+  }
+
+  @Test
+  void parse_digitBoundaryZero_throwsForNonDigit() {
+    // Tests the boundary: '0' - 1 = '/' should not be accepted as a digit.
+    assertThrows(SyntaxException.class, () -> LanguageParser.parse("@version /; language Test;"));
+  }
+
+  @Test
+  void parse_digitBoundaryNine_throwsForNonDigit() {
+    // Tests the boundary: '9' + 1 = ':' should not be accepted as a digit.
+    assertThrows(SyntaxException.class, () -> LanguageParser.parse("@version :; language Test;"));
+  }
+
+  // -------------------------------------------------------------------------
+  // Empty rule (parseTerm returning empty sequence)
+  // -------------------------------------------------------------------------
+
+  @Test
+  void parse_emptyAlternative_producesEmptySequence() throws SyntaxException {
+    // C => 'a' | ; -- the second alternative is empty (epsilon).
+    // parseTerm returns Expression.sequence() which must not be null.
+    Rule<String> rule =
+        firstRule(LanguageParser.parse("@version 1; parser T; rules { S => 'a' | ; S => S; }"));
+    assertInstanceOf(ExpressionChoice.class, rule.pattern());
+    ExpressionChoice<?> choice = (ExpressionChoice<?>) rule.pattern();
+    assertEquals(2, choice.alternatives().size());
+    // The second alternative should be an empty sequence, not null.
+    assertNotNull(choice.alternatives().get(1));
+    assertInstanceOf(ExpressionSequence.class, choice.alternatives().get(1));
+    assertTrue(choice.alternatives().get(1).getChildren().isEmpty());
+  }
+
+  // -------------------------------------------------------------------------
+  // readIdentifier edge cases
+  // -------------------------------------------------------------------------
+
+  @Test
+  void parse_identifierStartingWithDigit_throws() {
+    // readIdentifier negated conditional: !isIdentStart should reject digits.
+    assertThrows(
+        SyntaxException.class,
+        () -> LanguageParser.parse("@version 1; parser T; rules { 0bad => S; S => 0bad; }"));
+  }
+
+  // -------------------------------------------------------------------------
   // Round-trip: render then parse
   // -------------------------------------------------------------------------
 

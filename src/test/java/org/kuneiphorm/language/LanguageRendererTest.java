@@ -331,6 +331,86 @@ class LanguageRendererTest {
 
   // --- Custom label renderer ---
 
+  // --- Formatting: newlines and indentation ---
+
+  @Test
+  void render_tokensBlock_hasNewlinePerToken() {
+    Language<String> lang =
+        new Language<>(
+            "Test",
+            new Grammar<>(var("S"), List.of(rule("S", term("a")))),
+            List.of(token("a", "a"), token("b", "b")));
+    String result = LanguageRenderer.render(lang);
+    // Each token definition should be on its own line with indentation.
+    assertTrue(result.contains("    'a' <- \"a\";\n"));
+    assertTrue(result.contains("    'b' <- \"b\";\n"));
+  }
+
+  @Test
+  void render_rulesBlock_hasNewlinePerRule() {
+    Language<String> lang =
+        new Language<>(
+            "Test",
+            new Grammar<>(var("S"), List.of(rule("S", term("a")), rule("S", term("b")))),
+            List.of(token("a", "a"), token("b", "b")));
+    String result = LanguageRenderer.render(lang);
+    // Each rule should be on its own line with indentation.
+    assertTrue(result.contains("    S => 'a';\n"));
+    assertTrue(result.contains("    S => 'b';\n"));
+  }
+
+  @Test
+  void render_tokensBlockPrefix_hasNewlineBeforeKeyword() {
+    Language<String> lang =
+        new Language<>(
+            "Test",
+            new Grammar<>(var("S"), List.of(rule("S", term("a")))),
+            List.of(token("a", "a")));
+    String result = LanguageRenderer.render(lang);
+    // There should be a newline before "tokens {".
+    assertTrue(result.contains("\ntokens {\n"));
+  }
+
+  @Test
+  void render_rulesBlockPrefix_hasNewlineBeforeKeyword() {
+    Language<String> lang =
+        new Language<>(
+            "Test",
+            new Grammar<>(var("S"), List.of(rule("S", term("a")))),
+            List.of(token("a", "a")));
+    String result = LanguageRenderer.render(lang);
+    // There should be a newline before "rules {".
+    assertTrue(result.contains("\nrules {\n"));
+  }
+
+  @Test
+  void render_quantifierOnUnit_noUnnecessaryParens() {
+    // needsParens returns false for ExpressionUnit, so no parens should appear.
+    // If needsParens always returned true, we'd get ('a')* instead of 'a'*.
+    Language<String> lang =
+        new Language<>(
+            "Test",
+            new Grammar<>(var("S"), List.of(rule("S", Expression.optional(term("a"))))),
+            List.of(token("a", "a")));
+    String result = LanguageRenderer.render(lang);
+    assertTrue(result.contains("'a'?"));
+    assertFalse(result.contains("('a')?"));
+  }
+
+  @Test
+  void render_quantifierOnQuantifier_noUnnecessaryParens() {
+    // ExpressionQuantifier is not a choice or sequence, so no parens needed.
+    Language<String> lang =
+        new Language<>(
+            "Test",
+            new Grammar<>(
+                var("S"), List.of(rule("S", Expression.star(Expression.optional(term("a")))))),
+            List.of(token("a", "a")));
+    String result = LanguageRenderer.render(lang);
+    assertTrue(result.contains("'a'?*"));
+    assertFalse(result.contains("('a'?)*"));
+  }
+
   @Test
   void render_customLabelRenderer_usesRenderer() {
     Language<Integer> lang =
